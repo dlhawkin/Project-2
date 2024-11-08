@@ -2,29 +2,234 @@
 title: "Project2 Report"
 author: "Diahmin Hawkins dlh2166@columbia.edu"
 date: "11/6/2024"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
+
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = FALSE,
+                      message = FALSE,
+                      echo = FALSE,
+                      fig.align = "center")
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+library(readr)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(MASS)
+library(tidyr)
+library(kableExtra)
+library(knitr)
+library(GGally)
+library(naniar)
+library(visdat)
+library(gtsummary)
+library(gt)
+library(mice)
+library(corrplot) 
+library(reshape2)
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
+```{r}
+#Load the data in
+project2<- read_csv("project2.csv")
+#Observe the data
+head(project2)
+dim(project2)
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+project2%>% vis_dat()
+vis_miss(project2)
+project2%>% glimpse()
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+```{r}
+#Get all the missing data from each column
+Missing_Data<- sapply(project2, function(x) sum(is.na(x)))
+# Convert to dataframe
+Missing_Data_df <- data.frame(ColumnName = names(Missing_Data), `Missing Data` = Missing_Data)
+
+# Set names for the dataframe columns if necessary
+names(Missing_Data_df) <- c("Variables", "Missing Data")
+
+# Calculate the total number of rows in the dataset
+total_rows <- nrow(project2)  
+
+
+#Create Missing Data Summary
+missing_data_summary <-Missing_Data_df %>%  
+  filter(Variables %in% c('ftcd_score', 'inc', 'crv_total_pq1', 'shaps_score_pq1', 
+                          'NMR', 'Only.Menthol', 'readiness')) %>%
+    mutate(Percent_Missing = (`Missing Data` / total_rows) * 100) %>%
+  dplyr::select(Variables, `Missing Data`, Percent_Missing)%>%
+  mutate(Variables = case_when(
+   Variables == "ftcd_score" ~ "FTCD Score at Baseline",
+     Variables == "inc" ~ "Income",
+    Variables == "crv_total_pq1" ~ "Cigarette Reward Value at  Baseline",
+   Variables == "shaps_score_pq1" ~ "Anhedonia",
+    Variables == "NMR" ~ "Nicotine Metabolism Ratio",
+    Variables == "Only.Menthol" ~ "Exclusive Mentholated Cigarette User",
+    Variables == "readiness" ~ "Baseline Readiness to Quit Smoking"))
+
+# Obtain the total missing data and the percentage or missing data
+total_missing <- sum(missing_data_summary$`Missing Data`)
+percent_missing_total <- (total_missing / total_rows) * 100
+
+#Create row to combine with the summart table
+total_row <- data.frame(
+  Variables = "Total",
+  `Missing Data` = total_missing,
+  Percent_Missing =percent_missing_total
+)
+
+#Both data frames have identical column names 
+names(total_row) <- names(missing_data_summary)
+
+# Bind the summary table and the total row
+missing_data_summary <- rbind(missing_data_summary, total_row)
+
+
+
+# Convert to a gtsummary table
+missing_data_summary %>%
+  gt() %>%
+  tab_header(
+    title = "Missing Data Summary for Smoking Sessation"
+  ) %>%
+  cols_label(
+    Variables = "Variables",
+    `Missing Data` = "Missing Values",
+    Percent_Missing = "Percentage Missing (%)"
+  ) %>%
+  fmt_number(
+    columns = vars(Percent_Missing),
+    decimals = 2  # Format percentage to two decimal places
+  )
+
+
+```
+
+```{r}
+# Compute the correlation matrix using complete observations
+cor_matrix <- cor(project2, use = "complete.obs")  # Use complete.obs to ignore NAs
+
+# Melt the correlation matrix for ggplot2
+cor_data <- melt(cor_matrix)
+
+
+#Cessation Smoking correlation plot 
+cessation_smoking_plot<-ggplot(data = cor_data, aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(value, 2)), color = "black", size = 4) +
+  scale_fill_gradient2(low = "hotpink", high = "royalblue", mid = "white",
+                       midpoint = 0, limit = c(-1, 1), space = "Lab",
+                       name = "Correlation") +
+  labs(title = "Correlation of Smoking Cessation",
+       x= "Variables",
+       y= "Variables") +
+  theme_minimal(base_family = "Times") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+        legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5, size= 20))
+
+cessation_smoking_plot
+  
+
+
+
+```
+
+
+```{r}
+#Change variables into factor and continous variables 
+factor_vars <- c("abst", "abst","Var","BA","sex_ps", "NHW",
+                 "Black", "Hisp", "inc", "edu","ftcd_score",
+                 "ftcd.5.mins", "otherdiag", "antidepmed","mde_curr",
+                 "Only.Menthol","readiness")
+
+#Mutate variables as factors
+project2<- project2%>%
+  mutate(across(all_of(factor_vars), as.factor))
+
+chi_square_results <- data.frame(
+  Variable1 = character(),
+  Variable2 = character(),
+  Chi_Square = numeric(),
+  Degrees_of_Freedom = numeric(),
+  P_Value = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Loop through each unique pair of variables
+for (i in 1:(length(factor_vars) - 1)) {
+  for (j in (i + 1):length(factor_vars)) {
+    var1 <- factor_vars[i]
+    var2 <- factor_vars[j]
+    
+    # Check if both columns exist in the data frame
+    if (all(c(var1, var2) %in% colnames(project2))) {
+      # Create a contingency table
+      table_data <- table(project2[[var1]], project2[[var2]])
+      
+      # Perform the chi-square test
+      chi_test <- chisq.test(table_data)
+      
+       # Add results to the data frame
+      chi_square_results <- rbind(chi_square_results, data.frame(
+        Variable1 = var1,
+        Variable2 = var2,
+        Chi_Square = chi_test$statistic,
+        Degrees_of_Freedom = chi_test$parameter,
+        P_Value = chi_test$p.value
+      ))
+    }
+  }
+}
+
+
+significance_level <- 0.05
+
+# Filter for significant associations only
+significant_results <- chi_square_results %>%
+  filter(P_Value < significance_level)
+
+
+# Display the significant results as a kable table
+kable(significant_results, 
+      caption = "Significant Chi-Square Test Results", 
+      col.names = c("Variable 1", "Variable 2", "Chi-Square", "Degrees of Freedom", "P-Value"),
+      digits = 2) # Set digits for p-values and chi-square
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
