@@ -1,12 +1,11 @@
 ---
-title: "Project2 Report"
+title: "Untitled"
 author: "Diahmin Hawkins dlh2166@columbia.edu"
-date: "11/6/2024"
+date: "11/9/2024"
 output:
   pdf_document: default
   html_document: default
 ---
-
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(warning = FALSE,
@@ -48,9 +47,6 @@ project2%>% vis_dat()
 vis_miss(project2)
 project2%>% glimpse()
 ```
-
-
-
 
 ```{r}
 #Get all the missing data from each column
@@ -211,8 +207,6 @@ kable(significant_results,
 
 ```
 
-
-
 ```{r}
 # Find the variables in project2 that are not in factor_vars
 continous_vars <- setdiff(names(project2), factor_vars)
@@ -251,30 +245,9 @@ cessation_smoking_plot2
   
 
 
+
+
 ```
-
-
-
-```{r}
-
-# Perform multiple imputation
-imputed_data <- mice(project2, m = 5, method = 'pmm', maxit = 10, seed = 123)
-
-# Get a complete dataset from the imputed data (for example, the first imputation)
-complete_data <- complete(imputed_data, 1:5)
-
-#complete_data
-#sum(is.na(complete_data))
-```
-
-
-
-
-
-
-
-
-
 
 
 ```{r}
@@ -351,28 +324,19 @@ demographics_table <- demographics_table %>%
   select(treatment_groups, `N`, `Mean Ages`, `Standard Deviation Ages`, Blacks, Hispanics, `Black Percentage`, `Hispanic Percentage`,`Education Levels`, `1.x`,`2.x`,`3.x`,`4.x`,`5.x`, `Income Levels`, `1.y`,`2.y`,`3.y`,`4.y`,`5.y`,`NA`, `Major Depressive Disorder`, `0`,`1`,
          `Cigarette Type`, ` Menthol Only`,  everything())
 
-
-  
-
 # Transpose the table
 transposed_table <- as.data.frame(t(demographics_table))
 
 # Update column names to reflect the new format
 colnames(transposed_table) <- transposed_table[1, ]  # Set the first row as column names
-transposed_table <- transposed_table[-1, ]           # Remove the first row (now redundant)
-#rownames(transposed_table) <- c("Blacks")            # Rename rows if needed
+transposed_table <- transposed_table[-1, ]    
 
 
 
-#Create Kable Extra Table 
 #Create Kable Extra Table 
 kable(transposed_table, 
       caption = "Demographics Table of the Smoking Cessation Participants",
       col.names = c("Demograhic Characteristics Variable", "BA+Placebo", "BA+VA", "ST+Placebo", "ST+VA"),
       digits =2) # Set digits for p-values and chi-square
 
-
-
 ```
-
-
