@@ -25,7 +25,7 @@ The R version and poackages used in this project are indicated below: `R version
 `corrplot_0.94`
 `mice_3.16.0`
 `gt_0.11.1`
-gtsummary_2.0.2` 
+`gtsummary_2.0.2` 
 `visdat_0.6.0`   
 `naniar_1.1.0`
 `GGally_2.2.1`
@@ -41,4 +41,4 @@ gtsummary_2.0.2`
 `tibble_3.2.1`,  
 `ggplot2_3.5.1` 
 `tidyverse_2.0.0 ` 
-readr_2.1.5`  
+`readr_2.1.5`  
