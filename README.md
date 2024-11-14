@@ -14,7 +14,7 @@ The objective of this current project is to leverage data from this trial to ass
 This study was conducted in research clinics at Northwestern University (Chicago, IL) and the University of Pennsylvania (Philadelphia, PA).This study included 300 adult smokers with either current or past MDD.
 
 # Key Files
-`Project-2-Report.pdf`: Finalize report that consist of the exploratory data analysis and  assessING baseline variables as potential moderators of the behavioral treatment effects on end-of-treatment (EOT) abstinence `Project-2-Report.Rmd` : Rmd file that contains code, analysis and interpretations.
+`Final_Report_Project2.pdf`: Finalize report that consist of the exploratory data analysis and  assessING baseline variables as potential moderators of the behavioral treatment effects on end-of-treatment (EOT) abstinence `Final_Report_Project2.Rmd` : Rmd file that contains code, analysis and interpretations.
 
 
 
